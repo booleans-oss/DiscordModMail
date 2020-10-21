@@ -1,11 +1,6 @@
-const Discord = require('discord.js');
-    require('dotenv').config()
+(async () => {
+    const verif = await require('./utils/assets/ErrorHandling')();
     const Bot = require("./utils/assets/BotBase");
-    const path = require('path');
     const bot = new Bot();
-    
-    (async () => {
-        await bot.login(process.env.TOKEN_BOT);
-        await bot.chargementCommand();
-        await bot.chargementEvent(bot);
+    await bot._setup();
       })();
