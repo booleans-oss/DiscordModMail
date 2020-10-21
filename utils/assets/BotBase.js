@@ -1,42 +1,52 @@
-const {
-    Client,
-    Collection
-} = require("discord.js");
-const {
-    readdirSync
-} = require("fs");
+const { Client } = require("discord.js");
+const BaseEvent = require('./EventBase');
+const BaseCommand = require('./CommandBase');
+const fs = require("fs").promises
 const path = require("path");
 class Bot extends Client {
     constructor(options) {
         super(options);
         this.commands = new Map();
+        this.events = new Map();
         this.aliases = new Map();
     }
-    async chargementCommand() {
-        const directories = readdirSync("./commands/");
-        directories.forEach(async (dir) => {
-            const commands = await readdirSync("./commands/" + dir + "/");
-            try {
-                commands.filter((cmd) => cmd.split(".").pop() === "js").forEach((cmd) => {
-                    const props = new(require(`../../commands/${dir}${path.sep}${cmd}`))(this);
-                    this.commands.set(cmd.slice(0, -10).toLowerCase(), props);
-                    props.help.aliases.forEach((alias) => {
-                        this.aliases.set(alias.toLowerCase(), props.help.name.toLowerCase());
-                    });
-                });
-            } catch (e) {
-                console.log(e)
+    async _setup() {
+      await this.login(process.env.TOKEN_BOT);
+      await this._chargementEvent(path.join(__dirname, '../events/'));
+      await this._chargementCommand(path.join(__dirname, "../commands/"));
+    }
+    async _chargementCommand(cmdPath) {
+        const files = await fs.readdir(cmdPath);
+        for (const file of files) {
+          const stat = await fs.lstat(path.join(cmdPath, file));
+          if (stat.isDirectory()) this._chargementCommand(path.join(cmdPath, file));
+          if (file.endsWith('.js')) {
+            const Command = require(path.join(cmdPath, file));
+            if (Command.prototype instanceof BaseCommand) {
+              const cmd = new Command();
+              this.commands.set(cmd.name, cmd);
+              cmd.aliases.forEach((alias) => {
+                this.commands.set(alias, cmd);
+              });
             }
-        });
+          }
+        }
     }
-    async chargementEvent(bot) {
-        const evtFiles = await readdirSync("./events/");
-        evtFiles.forEach((file) => {
-            const eventName = file.split(".")[0];
-            const event = new(require(`../../events/${file}`))(this);
-            bot.on(eventName, (...args) => event.run(bot, ...args));
-            delete require.cache[require.resolve(`../../events/${file}`)];
-        });
+    async _chargementEvent(eventPath) {
+        const files = await fs.readdir(eventPath);
+        for (const file of files) {
+            const stat = await fs.lstat(path.join(eventPath, file));
+            if (stat.isDirectory()) this._chargementEvent(path.join(eventPath, file));
+            if (file.endsWith('.js')) {
+                const Event = require(path.join(eventPath, file));
+                if (Event.prototype instanceof BaseEvent) {
+                    const event = new Event();
+                    this.events.set(event.name, event);
+                    this.on(event.name, event.run.bind(event, this));
+                }
+            }
+        }
     }
+    
 }
 module.exports = Bot;
