@@ -8,6 +8,8 @@ class Bot extends Client {
         super(options);
         this.commands = new Map();
         this.events = new Map();
+        this.time = new Map();
+        this.seen = new Map();
         this.aliases = new Map();
     }
     async _setup() {

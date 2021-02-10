@@ -19,11 +19,11 @@ module.exports = class ModMailDMEvent extends EventBase {
         // OU message.guild.roles.cache.find(role => role.name === "NOM DU ROLE");
         // Le rôle staff que la personne doit avoir pour accepter/refuser
 
-        if (time.has(message.author.id)) return message.channel.send("Tu as fermé un ticket trop récemment.");
+        if (this.time.has(message.author.id)) return message.channel.send("Tu as fermé un ticket trop récemment.");
         // Vérification que l'utilisateur n'as pas eu de ticket récemment
-        if (!dejavu.has(message.author.id)) {
+        if (!this.seen.has(message.author.id)) {
             // Vérification que l'utilisateur n'a pas de ticket ouvert en en cours
-            dejavu.set(message.author.id, message.channel.id)
+            this.seen.set(message.author.id, message.channel.id)
             // Ajout de l'utilisateur dans la map (l'utilisateur a un ticket)
             message.channel.send("Votre ticket a bien été pris en compte.")
             // Message de confirmation pour l'utilisateur
@@ -47,13 +47,13 @@ module.exports = class ModMailDMEvent extends EventBase {
                     // Si le staff refuse
                     message.author.send("Votre ticket a été refusé.");
                     // Message de refus envoyé à l'utilisateur
-                    dejavu.delete(message.author.id)
+                    this.seen.delete(message.author.id)
                     // Suppression de l'utilisateur dans la map des tickets ouverts
-                    time.set(message.author.id, message.channel);
+                    this.time.set(message.author.id, message.channel);
                     // Ajout de l'utilisateur dans la map des tickets récents
                     setTimeout(() => {
                         // Délai pour que l'utilisateur ne puisse pas ouvrir des tickets toutes les secondes
-                        time.delete(message.author.id);
+                        this.time.delete(message.author.id);
                         // Suppresion de l'utilisateur dans la map des tickets récents
                     }, 100000)
                     // Après 100 secondes
@@ -69,13 +69,13 @@ module.exports = class ModMailDMEvent extends EventBase {
                 // Console.log s'il y a une erreur
                 message.author.send("Votre requête n'a pas été convaincante.");
                 // Envoie du message que le staff n'a pas pu ajouter de réaction dans le temps imparti
-                dejavu.delete(message.author.id);
+                this.seen.delete(message.author.id);
                 // Suppression de l'utilisateur dans la map des tickets ouverts
-                time.add(message.author.id, message.channel);
+                this.time.add(message.author.id, message.channel);
                 // Ajout de l'utilisateur dans la map des tickets récents
                 setTimeout(() => {
                     // Délai pour que l'utilisateur ne puisse pas créer de ticket dans les secondes qui suivent
-                    time.delete(message.author.id);
+                    this.time.delete(message.author.id);
                     // Suppression de l'utilisateur dans les tickets récents
                 }, 10000);
                 // Après 10 secondes
@@ -114,13 +114,13 @@ module.exports = class ModMailDMEvent extends EventBase {
                     // Envoie du message de confirmation dans les MP de l'utilisateur
                     m.channel.send("Le ticket a bien été fermé");
                     // Envoie du message de confirmation dans le channel Staff
-                    dejavu.delete(message.author.id)
+                    this.seen.delete(message.author.id)
                     // Suppression de l'utilisateur dans la Map des tickets ouverts
-                    time.set(message.author.id, message.channel)
+                    this.time.set(message.author.id, message.channel)
                     // Ajout de l'utilisateur dans la Map des tickets récents
                     setTimeout(() => {
                         // Délai pour que l'utilisateur ne puisse pas créer de ticket dans les secondes qui suivent
-                        time.delete(message.author.id);
+                        this.time.delete(message.author.id);
                         // Suppression de l'utilisateur dans les tickets récents
                     }, 10000);
                     // Après 10 secondes
